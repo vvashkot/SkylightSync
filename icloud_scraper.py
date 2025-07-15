@@ -14,9 +14,9 @@ from dotenv import load_dotenv
 from selenium.webdriver.chrome.service import Service
 
 class ICloudPhotoScraper:
-    def __init__(self, album_url, download_dir='/Users/m1/Pictures/Skylight', data_dir='data'):
+    def __init__(self, album_url, download_dir=None, data_dir='data'):
         self.album_url = album_url
-        self.download_dir = download_dir
+        self.download_dir = download_dir or os.path.expanduser('~/Pictures/Skylight')
         self.data_dir = data_dir
         self.processed_photos_file = os.path.join(data_dir, 'processed_photos.json')
         self.processed_urls_file = os.path.join(data_dir, 'processed_urls.json')

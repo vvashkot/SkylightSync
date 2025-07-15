@@ -101,7 +101,7 @@ The application includes a web interface for monitoring and control:
 
 ### Data Management
 
-- **Photo Storage**: Downloads stored in `/Users/YOURUSERNAME/Pictures/Skylight` (configurable)
+- **Photo Storage**: Downloads stored in `~/Pictures/Skylight` (configurable)
 - **Database**: JSON file tracks processed photos and email status
 - **Cleanup**: Automatic cleanup of temporary files
 
@@ -125,7 +125,7 @@ BATCH_SIZE=5
 SYNC_INTERVAL_MINUTES=1440  # Default: 24 hours (1440 minutes)
                             # Common options: 30 (30 min), 60 (1 hour), 
                             # 180 (3 hours), 360 (6 hours), 720 (12 hours), 1440 (24 hours)
-PHOTOS_DIRECTORY=/Users/YOURUSERNAME/Pictures/Skylight
+PHOTOS_DIRECTORY=~/Pictures/Skylight
 ```
 
 ### Command Line Options

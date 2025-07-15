@@ -61,7 +61,7 @@ echo "  Run continuous: python skylight_sync.py"
 echo "  Custom interval: python skylight_sync.py --interval 1800"
 echo "  Custom batch:   python skylight_sync.py --batch-size 10"
 echo
-echo "📁 Photos will be saved to: $(grep PHOTOS_DIRECTORY .env 2>/dev/null | cut -d'=' -f2 || echo "/Users/m1/Pictures/Skylight")"
+echo "📁 Photos will be saved to: $(grep PHOTOS_DIRECTORY .env 2>/dev/null | cut -d'=' -f2 || echo "~/Pictures/Skylight")"
 echo
 echo "🌐 Web UI available at: http://localhost:5003"
 echo

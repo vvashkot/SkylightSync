@@ -15,7 +15,7 @@ load_dotenv()
 
 # Configuration
 ICLOUD_ALBUM_URL = os.getenv('ICLOUD_ALBUM_URL')
-PHOTOS_DIRECTORY = os.getenv('PHOTOS_DIRECTORY', '/Users/m1/Pictures/Skylight')
+PHOTOS_DIRECTORY = os.path.expanduser(os.getenv('PHOTOS_DIRECTORY', '~/Pictures/Skylight'))
 
 # Global variables for scheduler
 scheduler_active = False

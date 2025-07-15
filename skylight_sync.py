@@ -17,7 +17,7 @@ class BackgroundPhotoMonitor:
         self.sync_thread = None
         self.last_sync = None
         self.sync_interval = int(os.getenv('SYNC_INTERVAL_MINUTES', '1440')) * 60  # Default 24 hours (1440 minutes)
-        self.photos_directory = os.getenv('PHOTOS_DIRECTORY', '/Users/m1/Pictures/Skylight')
+        self.photos_directory = os.path.expanduser(os.getenv('PHOTOS_DIRECTORY', '~/Pictures/Skylight'))
         self.album_url = os.getenv('ICLOUD_ALBUM_URL')
         
         # Create data directory if it doesn't exist
