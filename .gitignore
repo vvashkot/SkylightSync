@@ -1,0 +1,8 @@
+.env
+downloads/
+processed_photos.json
+__pycache__/
+*.pyc
+.DS_Store
+chromedriver
+*.log

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.icloud.com)",
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker:*)"
+    ],
+    "deny": []
+  }
+}

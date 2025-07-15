@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  skylight-sync:
+    build: .
+    ports:
+      - "5003:5003"
+    volumes:
+      # Photo storage - maps host directory to container directory
+      - ${PHOTOS_DIRECTORY:-/Users/m1/Pictures/Skylight}:/app/downloads
+      # Data persistence - JSON database and logs
+      - ./data:/app/data
+      # Temporary directory for Chrome instances (in container's tmpfs)
+      - /tmp
+    environment:
+      # iCloud album URL
+      - ICLOUD_ALBUM_URL=${ICLOUD_ALBUM_URL}
+      # Email configuration
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - FROM_EMAIL=${FROM_EMAIL}
+      - TO_EMAIL=${TO_EMAIL}
+      # Photo storage directory (inside container)
+      - PHOTOS_DIRECTORY=/app/downloads
+    user: "1000:1000"  # Match host user permissions
+    restart: unless-stopped
