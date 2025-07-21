@@ -14,44 +14,52 @@ Automatically sync photos from an iCloud shared album to an email address with a
 
 ## Quick Start
 
-### Option 1: Interactive Setup (Recommended)
+### Prerequisites
 
-Run the interactive setup script to guide you through the setup process:
+- **Chrome browser** installed
+- **Python 3.8+** installed
+- **Virtual environment** (recommended for isolation)
 
+### Installation
+
+1. **Clone the repository**:
 ```bash
-python setup.py
+git clone <repository-url>
+cd SkylightSync
 ```
 
-This will check all prerequisites and help you configure the system.
-
-### Option 2: Quick Start Script
-
+2. **Create and activate a virtual environment**:
 ```bash
-./terminal-start.sh
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+
+# On Windows:
+venv\Scripts\activate
 ```
 
-### Option 3: Manual Setup
-
-1. **Prerequisites**:
-   - Chrome browser installed
-   - Python 3.8+ installed
-
-2. **Install dependencies**:
+3. **Install dependencies**:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **Install ChromeDriver**:
+4. **Install ChromeDriver**:
    - **Mac**: `brew install chromedriver`
    - **Linux**: Download from https://chromedriver.chromium.org/
    - **Windows**: Download from https://chromedriver.chromium.org/
 
-4. **Configure email settings**:
+5. **Configure email settings**:
    - Copy `.env.example` to `.env`
-   - Add your email credentials (for Gmail, use an app-specific password)
+   - Edit `.env` with your email credentials (for Gmail, use an app-specific password)
 
-5. **Run the background monitor**:
+6. **Run the application**:
 ```bash
+# Make sure virtual environment is activated
+source venv/bin/activate  # On macOS/Linux
+
 # Run background monitor (default: check every 24 hours)
 python skylight_sync.py
 
@@ -63,6 +71,94 @@ python skylight_sync.py --interval 1800  # Check every 30 minutes
 
 # Custom batch size
 python skylight_sync.py --batch-size 10  # Send 10 photos per email
+```
+
+### Option 1: Interactive Setup (Recommended)
+
+Run the interactive setup script to guide you through the setup process:
+
+```bash
+# Activate virtual environment first
+source venv/bin/activate  # On macOS/Linux
+venv\Scripts\activate     # On Windows
+
+# Run setup
+python setup.py
+```
+
+This will check all prerequisites and help you configure the system, including an option to set up **automated daily sync** using:
+- **macOS/Linux**: Cron job (runs at 9:00 AM daily)
+- **Windows**: Task Scheduler (runs at 9:00 AM daily)
+
+### Option 2: Quick Start Script
+
+```bash
+./terminal-start.sh
+```
+
+## Automated Scheduling
+
+The setup script can automatically configure daily sync jobs:
+
+### macOS/Linux (Cron Job)
+- Creates a shell script: `run_skylight_sync.sh`
+- Adds cron job to run daily at 9:00 AM
+- Logs output to: `cron.log`
+- View/edit: `crontab -e`
+- Remove: `crontab -l | grep -v skylight | crontab -`
+
+### Windows (Task Scheduler)
+- Creates a batch script: `run_skylight_sync.bat`
+- Adds Windows Task: `SkylightSync_Daily`
+- Runs daily at 9:00 AM
+- View/edit: Task Scheduler → `SkylightSync_Daily`
+- Remove: `schtasks /delete /tn "SkylightSync_Daily"`
+
+### Manual Cron Setup (Advanced)
+
+If you prefer to set up the cron job manually:
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line (runs at 9 AM daily):
+0 9 * * * /path/to/your/SkylightSync/run_skylight_sync.sh >> /path/to/your/SkylightSync/cron.log 2>&1
+```
+
+## Virtual Environment Usage
+
+**Important**: Always use a virtual environment to avoid conflicts with system Python packages.
+
+### Creating a Virtual Environment
+
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate it
+source venv/bin/activate  # On macOS/Linux
+venv\Scripts\activate     # On Windows
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Daily Usage
+
+```bash
+# Always activate the virtual environment before running the script
+source venv/bin/activate  # On macOS/Linux
+venv\Scripts\activate     # On Windows
+
+# Then run the application
+python skylight_sync.py
+```
+
+### Deactivating the Virtual Environment
+
+```bash
+deactivate
 ```
 
 ## Web Interface

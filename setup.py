@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SkylightSync Setup Script
-Provides interactive setup for either terminal or Docker installation
+Provides interactive setup for virtual environment installation
 """
 
 import os
@@ -23,6 +23,20 @@ def check_python_version():
         print(f"Current version: {sys.version}")
         sys.exit(1)
     print(f"✅ Python {sys.version_info.major}.{sys.version_info.minor} detected")
+
+def check_virtual_environment():
+    """Check if we're in a virtual environment"""
+    in_venv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+    if in_venv:
+        print("✅ Virtual environment detected")
+        return True
+    else:
+        print("⚠️  Virtual environment not detected")
+        print("It's recommended to run this in a virtual environment:")
+        print("  python -m venv venv")
+        print("  source venv/bin/activate  # On macOS/Linux")
+        print("  venv\\Scripts\\activate     # On Windows")
+        return False
 
 def check_chrome():
     """Check if Chrome is installed"""
@@ -103,42 +117,165 @@ def install_python_dependencies():
         print("❌ Failed to install Python dependencies")
         return False
 
-def check_docker():
-    """Check if Docker is available"""
-    try:
-        result = subprocess.run(['docker', '--version'], 
-                              capture_output=True, text=True, timeout=5)
-        if result.returncode == 0:
-            print("✅ Docker found")
-            return True
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+def create_virtual_environment():
+    """Create a virtual environment if it doesn't exist"""
+    venv_path = Path("venv")
+    if venv_path.exists():
+        print("✅ Virtual environment directory already exists")
+        return True
     
-    print("❌ Docker not found")
-    return False
+    print("\n🔧 Creating virtual environment...")
+    try:
+        subprocess.run([sys.executable, '-m', 'venv', 'venv'], check=True)
+        print("✅ Virtual environment created")
+        print("⚠️  Please activate it and run this setup again:")
+        print("   source venv/bin/activate  # On macOS/Linux")
+        print("   venv\\Scripts\\activate     # On Windows")
+        print("   python setup.py")
+        return True
+    except subprocess.CalledProcessError:
+        print("❌ Failed to create virtual environment")
+        return False
 
-def check_docker_compose():
-    """Check if Docker Compose is available"""
-    try:
-        result = subprocess.run(['docker-compose', '--version'], 
-                              capture_output=True, text=True, timeout=5)
-        if result.returncode == 0:
-            print("✅ Docker Compose found")
-            return True
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+def create_run_script():
+    """Create a shell script to run SkylightSync with virtual environment"""
+    current_dir = Path.cwd().absolute()
     
-    print("❌ Docker Compose not found")
-    return False
+    if sys.platform == "win32":
+        # Windows batch script
+        script_path = current_dir / "run_skylight_sync.bat"
+        script_content = f"""@echo off
+cd /d "{current_dir}"
+call venv\\Scripts\\activate.bat
+python skylight_sync.py --once
+pause
+"""
+    else:
+        # macOS/Linux shell script
+        script_path = current_dir / "run_skylight_sync.sh"
+        script_content = f"""#!/bin/bash
+cd "{current_dir}"
+source venv/bin/activate
+python skylight_sync.py --once
+"""
+    
+    try:
+        with open(script_path, 'w') as f:
+            f.write(script_content)
+        
+        # Make executable on Unix-like systems
+        if sys.platform != "win32":
+            os.chmod(script_path, 0o755)
+        
+        print(f"✅ Run script created: {script_path}")
+        return script_path
+    except Exception as e:
+        print(f"❌ Failed to create run script: {e}")
+        return None
+
+def setup_cron_job():
+    """Set up a cron job for daily execution"""
+    if sys.platform == "win32":
+        return setup_windows_task()
+    else:
+        return setup_unix_cron()
+
+def setup_unix_cron():
+    """Set up cron job on macOS/Linux"""
+    print("\n⏰ Setting up cron job for daily execution...")
+    
+    script_path = create_run_script()
+    if not script_path:
+        return False
+    
+    # Create cron entry (runs at 9 AM daily)
+    cron_line = f"0 9 * * * {script_path} >> {Path.cwd()}/cron.log 2>&1"
+    
+    try:
+        # Get current crontab
+        result = subprocess.run(['crontab', '-l'], 
+                              capture_output=True, text=True)
+        current_cron = result.stdout if result.returncode == 0 else ""
+        
+        # Check if our job already exists
+        if str(script_path) in current_cron:
+            print("✅ Cron job already exists")
+            return True
+        
+        # Add our job
+        new_cron = current_cron + cron_line + "\n"
+        
+        # Install new crontab
+        process = subprocess.Popen(['crontab', '-'], stdin=subprocess.PIPE, text=True)
+        process.communicate(new_cron)
+        
+        if process.returncode == 0:
+            print("✅ Cron job created successfully")
+            print(f"   Runs daily at 9:00 AM")
+            print(f"   Script: {script_path}")
+            print(f"   Logs: {Path.cwd()}/cron.log")
+            return True
+        else:
+            print("❌ Failed to create cron job")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error setting up cron job: {e}")
+        return False
+
+def setup_windows_task():
+    """Set up Windows Task Scheduler task"""
+    print("\n⏰ Setting up Windows Task Scheduler for daily execution...")
+    
+    script_path = create_run_script()
+    if not script_path:
+        return False
+    
+    task_name = "SkylightSync_Daily"
+    
+    try:
+        # Create task using schtasks
+        cmd = [
+            'schtasks', '/create',
+            '/tn', task_name,
+            '/tr', str(script_path),
+            '/sc', 'daily',
+            '/st', '09:00',
+            '/f'  # Force overwrite if exists
+        ]
+        
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print("✅ Windows Task created successfully")
+            print(f"   Task Name: {task_name}")
+            print(f"   Runs daily at 9:00 AM")
+            print(f"   Script: {script_path}")
+            return True
+        else:
+            print(f"❌ Failed to create Windows Task: {result.stderr}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error setting up Windows Task: {e}")
+        return False
 
 def setup_terminal():
     """Setup for terminal usage"""
-    print("\n🔧 Setting up for terminal usage...")
+    print("\n🔧 Setting up SkylightSync...")
     
     # Check prerequisites
     check_python_version()
+    venv_ok = check_virtual_environment()
     chrome_ok = check_chrome()
     chromedriver_ok = check_chromedriver()
+    
+    if not venv_ok:
+        print("\n⚠️  Virtual environment recommended but not required")
+        response = input("Continue without virtual environment? (y/N): ").strip().lower()
+        if response != 'y':
+            create_virtual_environment()
+            return False
     
     if not chrome_ok:
         print("\n❌ Chrome browser is required")
@@ -156,62 +293,55 @@ def setup_terminal():
     if not setup_env_file():
         return False
     
-    print("\n✅ Terminal setup complete!")
+    # Ask about cron job setup
+    print("\n⏰ Automated Scheduling Setup")
+    print("Would you like to set up automatic daily sync?")
+    if sys.platform == "win32":
+        print("This will create a Windows Task Scheduler task to run daily at 9:00 AM")
+    else:
+        print("This will create a cron job to run daily at 9:00 AM")
+    
+    response = input("Set up automated daily sync? (y/N): ").strip().lower()
+    cron_success = True
+    if response == 'y':
+        cron_success = setup_cron_job()
+    
+    print("\n✅ Setup complete!")
     print("\n📋 Next steps:")
     print("1. Edit .env file with your email credentials")
-    print("2. Run: python skylight_sync.py --once")
-    print("3. Or run continuously: python skylight_sync.py")
-    return True
-
-def setup_docker():
-    """Setup for Docker usage"""
-    print("\n🐳 Setting up for Docker usage...")
     
-    # Check Docker
-    if not check_docker():
-        print("\n❌ Docker is required for Docker setup")
-        print("Install Docker from: https://docs.docker.com/get-docker/")
-        return False
+    if cron_success and response == 'y':
+        print("2. Automated sync is configured - no manual intervention needed!")
+        print("3. To test manually, run: python skylight_sync.py --once")
+        if sys.platform == "win32":
+            print("4. To view/modify the task: Task Scheduler > SkylightSync_Daily")
+        else:
+            print("4. To view/modify cron job: crontab -e")
+            print("5. Check logs at: cron.log")
+    else:
+        if venv_ok:
+            print("2. Run manually: python skylight_sync.py --once")
+            print("3. Or run continuously: python skylight_sync.py")
+        else:
+            print("2. Activate virtual environment: source venv/bin/activate")
+            print("3. Run manually: python skylight_sync.py --once")
+            print("4. Or run continuously: python skylight_sync.py")
     
-    if not check_docker_compose():
-        print("\n❌ Docker Compose is required for Docker setup")
-        print("Install Docker Compose from: https://docs.docker.com/compose/install/")
-        return False
-    
-    # Setup environment
-    if not setup_env_file():
-        return False
-    
-    print("\n✅ Docker setup complete!")
-    print("\n📋 Next steps:")
-    print("1. Edit .env file with your email credentials")
-    print("2. Run: docker-compose up -d")
-    print("3. View logs: docker-compose logs -f")
-    print("4. Access web UI: http://localhost:5003")
     return True
 
 def main():
     print_banner()
     
-    print("Choose your installation method:")
-    print("1. Terminal (Recommended for development)")
-    print("2. Docker (Recommended for production)")
-    print("3. Exit")
+    print("This will set up SkylightSync for virtual environment usage.")
+    print("Virtual environments help isolate dependencies and avoid conflicts.")
+    print()
     
-    while True:
-        choice = input("\nEnter your choice (1-3): ").strip()
-        
-        if choice == "1":
-            success = setup_terminal()
-            break
-        elif choice == "2":
-            success = setup_docker()
-            break
-        elif choice == "3":
-            print("Setup cancelled.")
-            sys.exit(0)
-        else:
-            print("Invalid choice. Please enter 1, 2, or 3.")
+    response = input("Continue with setup? (Y/n): ").strip().lower()
+    if response == 'n':
+        print("Setup cancelled.")
+        sys.exit(0)
+    
+    success = setup_terminal()
     
     if success:
         print("\n🎉 Setup completed successfully!")
